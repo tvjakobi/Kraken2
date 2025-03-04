@@ -1,0 +1,52 @@
+#!/bin/bash
+#SBATCH --job-name=run_bracken        # Job name
+#SBATCH --output=run_bracken.out      # Standard output log
+#SBATCH --error=run_bracken.err       # Standard error log
+#SBATCH --ntasks=1                     # Number of tasks
+#SBATCH --cpus-per-task=4              # Number of CPU cores per task
+#SBATCH --mem=64G                       # Memory per node
+#SBATCH --time=24:00:00                # Time limit hrs:min:sec
+#SBATCH --array=0-20  # Array job index for 21 samples
+
+#set place to write files out
+
+INFOLDER="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/Kraken2_PlusPFP/KRAKEN_OUT_20X/trimmed"
+OUTFOLDER="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/Kraken2_PlusPFP/BRACKEN_OUT_20X/trimmed"
+
+# Load necessary modules (if applicable)
+source activate /data/scratch/DMP/UCEC/GENEVOD/tjakobi/my_env/kraken2_v2.1.2
+
+#Change to the correct directory for step below
+#cd /data/scratch/DMP/UCEC/GENEVOD/tjakobi/KRAKEN_DEEP || exit 1
+
+# Read the BAM file path from the list based on the array index
+#BAM_FILE=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" /data/scratch/DMP/UCEC/GENEVOD/tjakobi/KRAKEN_DEEP/all_bam_list_ibd.txt)
+
+# Extract the identifier (e.g., IBD002_009E) from the BAM file path
+#SAMPLE=$(basename "$BAM_FILE" _umi_aware_md.bam)
+
+#echo '----Running braken on ${SAMPLE}'------'
+
+# Change to the directory containing the FASTQ files
+INPUT_DIR="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/Kraken2_PlusPFP/KRAKEN_INPUT_20X/trimmed"
+cd "$INPUT_DIR" || exit 1
+
+# Create an array of unique base names (removing _R1.fastq/_R2.fastq suffix)
+FASTQ_BASE_NAMES=($(ls *_R1.fastq | sed 's/_R1\.fastq//' | sort))
+
+# Get the base name based on the array job index
+SAMPLE=${FASTQ_BASE_NAMES[$SLURM_ARRAY_TASK_ID]}
+
+DB="/data/rds/DMP/UCEC/GENEVOD/tjakobi/Kraken2_db/data/scratch/DCS/UDDU/CANBIO/lgallagher/ngs/4.resources/databases/Kraken2_PlusPFP"
+
+READ_LEN=30
+CLASSIFICATION_LEVEL=S #P phylum G genus C class O order F family K kingdom
+THRESHOLD=10 #default is 10
+
+bracken -d ${DB} \
+-i ${INFOLDER}/${SAMPLE}.kraken.report \
+-o ${OUTFOLDER}/${SAMPLE}_species.bracken \
+-w ${OUTFOLDER}/${SAMPLE}_bracken_species.report \
+-r ${READ_LEN} \
+-l ${CLASSIFICATION_LEVEL} \
+-t ${THRESHOLD}
