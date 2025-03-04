@@ -1,0 +1,40 @@
+#!/bin/bash
+#SBATCH --job-name=make_unmapped_fastq        # Job name
+#SBATCH --output=make_unmapped_fastq.out      # Standard output log
+#SBATCH --error=make_unmapped_fastq.err       # Standard error log
+#SBATCH --ntasks=1                     # Number of tasks
+#SBATCH --cpus-per-task=4              # Number of CPU cores per task
+#SBATCH --mem=16G                       # Memory per node
+#SBATCH --time=04:00:00                # Time limit hrs:min:sec
+#SBATCH --array=0-96  # Array job index for 97 samples
+
+#set place to write files out
+OUTFOLDER="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/1.human_bam_to_unmapped/KRAKEN_INPUT_0.5X_1"
+
+# Create output folder if it doesn't exist
+mkdir -p "$OUTFOLDER"
+
+# Load necessary modules (if applicable)
+module load SAMtools/1.11
+module load bedtools/2.29.2
+
+# Read the BAM file path from the list based on the array index
+BAM_FILE=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" all_bam_list_ibd.0.5X.txt)
+
+# Extract the identifier (e.g., IBD002_009E) from the BAM file path
+BASE_NAME=$(basename "$BAM_FILE" .bam)
+
+# Define the output filename (you can modify this as needed)
+UNMAP_BAM="${OUTFOLDER}/${BASE_NAME}_unmap.bam"
+
+# Convert BAM to a subsetted BAM with only unmapped reads
+samtools view -b -f 4 "$BAM_FILE" > "$UNMAP_BAM"
+
+echo "Processed $BAM_FILE to $UNMAP_BAM"
+
+#### get fastq file of unmapped reads
+
+fq1="${OUTFOLDER}/${BASE_NAME}_R1.fastq"
+fq2="${OUTFOLDER}/${BASE_NAME}_R2.fastq"
+
+bedtools bamtofastq -i "$UNMAP_BAM" -fq "${fq1}" -fq2 "${fq2}"
