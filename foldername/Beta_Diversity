@@ -1,0 +1,41 @@
+#!/bin/bash
+#SBATCH --job-name=beta_diversity    # Job name
+#SBATCH --output=beta_diversity.out  # Standard output log
+#SBATCH --error=beta_diversity.err   # Standard error log
+
+# Activate Conda environment
+source activate /data/scratch/DMP/UCEC/GENEVOD/tjakobi/my_env/kraken2_v2.1.2
+
+# Define directories. Use the files from the removed contamination bracken outputs
+INPUT_DIR="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/Kraken2_PlusPFP/BRACKEN_OUT_20X/trimmed/removed_contaminants"
+OUTPUT_DIR="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/Kraken2_PlusPFP/DIVERSITY_ANALYSIS/trimmed"
+mkdir -p "$OUTPUT_DIR"
+
+# Colon section key
+declare -A SECTIONS=( ["C"]="Cecum" ["A"]="Ascending" ["T"]="Transverse" ["D"]="Descending" ["S"]="Sigmoid" ["R"]="Rectum" )
+
+# Initialize an empty array for all samples
+declare -a ALL_SAMPLES
+
+# Loop through all .bracken files
+for file in "$INPUT_DIR"/*_species.bracken; do
+    sample=$(basename "$file" "_species.bracken")  # Extract filename without extension
+
+    # Extract the colon section (2nd field when split by "_")
+    section=$(echo "$sample" | cut -d'_' -f2)
+
+    # Debugging: Print extracted values
+    echo "Sample: $sample | Section: $section"
+
+    # Add file to list
+    echo "$sample added to analysis"
+    ALL_SAMPLES+=("$file")  # Correct way to append to an array
+done  # Correct loop termination
+
+# Print final collected samples
+echo "Final list of samples: ${ALL_SAMPLES[@]}"
+
+# Calculate beta diversity for all samples
+python /data/scratch/DMP/UCEC/GENEVOD/tjakobi/my_env/kraken2_v2.1.2/bin/beta_diversity.py \
+    -i "${ALL_SAMPLES[@]}" --type bracken > "$OUTPUT_DIR/beta_diversity_all_NC.tsv"
+
