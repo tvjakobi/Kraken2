@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH --job-name=bracken_build        # Job name
+#SBATCH --output=bracken_build.out      # Standard output log
+#SBATCH --error=bracken_build.err       # Standard error log
+#SBATCH --ntasks=1                     # Number of tasks
+#SBATCH --cpus-per-task=16              # Number of CPU cores per task
+#SBATCH --mem=64G                       # Memory per node
+#SBATCH --time=24:00:00                # Time limit hrs:min:sec
+
+#Activate conda environment
+source activate /data/scratch/DMP/UCEC/GENEVOD/tjakobi/my_env/kraken2_v2.1.2
+
+#Specify required variables
+KRAKEN_DB="/data/rds/DMP/UCEC/GENEVOD/tjakobi/Kraken2_db/data/scratch/DCS/UDDU/CANBIO/lgallagher/ngs/4.resources/databases/Kraken2_PlusPFP"
+THREADS=16
+KMER_LEN=35
+READ_LEN=30
+
+#Build bracken database
+bracken-build -d ${KRAKEN_DB} -t ${THREADS} -k ${KMER_LEN} -l ${READ_LEN}
