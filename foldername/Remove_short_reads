@@ -1,0 +1,34 @@
+# Set input and output directories
+INPUT_DIR="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/Kraken2_PlusPFP/KRAKEN_INPUT_20X"
+OUTPUT_DIR="${INPUT_DIR}/trimmed"
+
+# Create output directory if it doesn't exist
+mkdir -p "${OUTPUT_DIR}"
+
+# Process all FASTQ files in pairs
+for r1 in ${INPUT_DIR}/*_R1*.fastq; do
+    # Derive the matching R2 filename
+    r2="${r1/_R1/_R2}"
+
+    # Ensure R2 exists before processing
+    if [[ -f "$r2" ]]; then
+        # Extract filename without path
+        r1_name=$(basename "$r1")
+        r2_name=$(basename "$r2")
+
+        echo "Processing: $r1_name and $r2_name"
+
+        # Run filtering script
+        paste <(cat "$r1" | paste - - - -) <(cat "$r2" | paste - - - -) \
+        | awk -v FS='\t' 'length($2) >= 30 && length($6) >= 30' \
+        | tee >(cut -f 1-4 | tr '\t' '\n' > "${OUTPUT_DIR}/${r1_name}") \
+        | cut -f 5-8 | tr '\t' '\n' > "${OUTPUT_DIR}/${r2_name}"
+
+        echo "Finished processing: $r1_name and $r2_name"
+    else
+        echo "Skipping: No matching R2 for $r1"
+    fi
+done
+
+echo "All files processed. Trimmed files are in ${OUTPUT_DIR}"
+
