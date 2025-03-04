@@ -1,0 +1,20 @@
+# Load the environment with BBmap
+source activate /data/scratch/DMP/UCEC/GENEVOD/tjakobi/my_env/bbmap_env
+
+#Specific input and output folders
+INPUT_FOLDER="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/Kraken2_PlusPFP/KRAKEN_INPUT_20X/trimmed/"
+OUTPUT_FOLDER="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/Kraken2_PlusPFP/KRAKEN_INPUT_20X/trimmed/read_lengths/"
+
+#Create output folder if it has not yet been created
+mkdir -p "${OUTPUT_FOLDER}"
+
+# Loop through all .fastq files in the input folder
+for FILE in "${INPUT_FOLDER}"/*.fastq; do
+    # Extract the base name of the file (e.g., sample1.fastq -> sample1)
+    BASENAME=$(basename "${FILE}" .fastq)
+
+    # Run the readlength.sh command
+    readlength.sh in="${FILE}" out="${OUTPUT_FOLDER}/${BASENAME}_histogram.txt"
+done
+
+echo "Read length calculations completed. Results are in ${OUTPUT_FOLDER}"
