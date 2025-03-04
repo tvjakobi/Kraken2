@@ -1,2 +1,2 @@
-# Kraken2
+# Kraken 2 Pipeline
 
