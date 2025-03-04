@@ -5,3 +5,5 @@ Step 3: Build appropriate Bracken database
 Step 4: Run Kraken 2
 Step 5: Run Bracken
 Step 6: Calculate alpha and beta diversity using the Bracken output
+
+Navitage into foldername to find the relevant scripts.
