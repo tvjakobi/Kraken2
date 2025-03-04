@@ -1,0 +1,35 @@
+#!/bin/bash
+#SBATCH --job-name=alpha_diversity    # Job name
+#SBATCH --output=alpha_diversity.out  # Standard output log
+#SBATCH --error=alpha_diversity.err   # Standard error log
+#SBATCH --ntasks=1                    # Number of tasks
+#SBATCH --cpus-per-task=1             # Number of CPU cores per task
+#SBATCH --mem=16G                      # Memory per node
+#SBATCH --time=1:00:00                 # Time limit hrs:min:sec
+
+# Load Conda environment
+#source activate /data/scratch/DMP/UCEC/GENEVOD/tjakobi/my_env/kraken2_v2.1.2
+
+# Define paths
+NON_CONT_DIR="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/Kraken2_PlusPFP/BRACKEN_OUT_20X/trimmed/removed_contaminants"
+OUTPUT_FILE="/data/scratch/DMP/UCEC/GENEVOD/tjakobi/Kraken2_PlusPFP/DIVERSITY_ANALYSIS/trimmed/alpha_diversity_results_Si_NC.tsv"
+
+# Initialize output file with header
+echo -e "Sample_Name\tAlpha_Diversity" > "$OUTPUT_FILE"
+
+# Loop through all filtered .bracken files (excluding *genus.bracken)
+for file in "$NON_CONT_DIR"/*.bracken; do
+    if [[ "$file" != *_genus.bracken ]]; then
+        # Extract sample name correctly
+        sample_name=$(basename "$file" | sed 's/_species\.bracken//')
+
+        # Run alpha diversity calculation (Simpson's diversity - Si, Shannon's diversity - Sh)
+        alpha_value=$(python /data/scratch/DMP/UCEC/GENEVOD/tjakobi/my_env/kraken2_v2.1.2/bin/alpha_diversity.py -f "$file" -a Si)
+
+        # Append results to output file
+        echo -e "$sample_name\t$alpha_value" >> "$OUTPUT_FILE"
+    fi
+done
+
+echo "Simpson's diversity calculations complete. Results saved in $OUTPUT_FILE"
+
